@@ -1,4 +1,4 @@
-This is the batch (and function) version of Noddy that simply takes a history file and calculates a block model and gravity and magnetic data from this file.
+This is the batch (and function) version of Noddy that simply takes a history file and calculates a block model, triangulated volume and gravity and magnetic data from this file.
 
 Usage:
 
