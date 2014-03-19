@@ -422,7 +422,7 @@ float ***densityData,     ***magSusData,      ***remSusDecData,
    double xStart, yStart, zStart, xEnd, yEnd, zEnd;
    int nx = 0, ny = 0, cubeSize;
    int i, calcRangeInCubes;
-
+   char dxfname[250];
    cubeSize = cubeSizes[0];
    for (i = 0; i < numLayers; i++)
    {
@@ -444,6 +444,9 @@ float ***densityData,     ***magSusData,      ***remSusDecData,
    for (i = 0, zEnd = zStart; i < numLayers; i++)
       zEnd = zEnd - cubeSizes[i];
 
+
+   sprintf((char *) dxfname,"%s.dxf",blockName);
+
    addFileExtention (blockName, ANOM_HEADER_FILE_EXT);
    writeBlockHeaderToFile (blockName, numLayers, layerDimensions,
              xStart, yStart, zStart, xEnd, yEnd, zEnd,
@@ -457,6 +460,9 @@ float ***densityData,     ***magSusData,      ***remSusDecData,
       addFileExtention (blockName, ANOM_INDEX_FILE_EXT);
       write3DIregBlockToFile (blockName, (char ***) indexData,
                        numLayers, layerDimensions, sizeof(short));
+      //doTopology(blockName,(char ***) indexData);
+      do3dStratMap ((THREED_IMAGE_DATA *) NULL, dxfname);
+
    }
    else
    {

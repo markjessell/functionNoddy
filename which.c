@@ -31,7 +31,7 @@
                  /* ************************* */
                  /* Globals used in this file */
 LAYER_PROPERTIES *getClosestImportBlock ();
-
+void whichRock( double xLoc, double yLoc, double zLoc, int *rockType, int *index);
 
 #ifndef _MPL
 COLOR which(xcord,ycord,index, xLoc, yLoc, zLoc,flavor)
@@ -411,7 +411,7 @@ double xLoc, yLoc, zLoc;
             layerProp = &(stratOptions->properties[0]);
                                        /* below the bottom */
          else if (zLoc <= stratOptions->properties[1].height)
-            layerProp = &(stratOptions->properties[0]);
+             layerProp = &(stratOptions->properties[0]);
                                        /* above the top */
          else if (zLoc > stratOptions->properties[numLayers-1].height)
             layerProp = &(stratOptions->properties[numLayers-1]);
@@ -435,3 +435,217 @@ double xLoc, yLoc, zLoc;
    
    return (layerProp);
 }                                                                    
+
+
+void whichRock(xLoc, yLoc, zLoc,rockType,index)
+double xLoc, yLoc, zLoc;
+int *rockType;
+int *index;
+{
+	   STORY **histoire;
+	   double ***xyzLoc;
+	   int numEvents = countObjects(NULL_WIN);
+	   LAYER_PROPERTIES *alayer=NULL,*properties[50];
+       int i,numProps;
+       OBJECT *event;
+
+       numProps = assignPropertiesForStratLayers (properties, 50);
+
+       xyzLoc = (double ***) create3DArray (2, 2, 4, sizeof(double));
+       histoire = (STORY **) create2DArray (2, 2, sizeof(STORY));
+
+	   xyzLoc[1][1][1] = xLoc;
+	   xyzLoc[1][1][2] = yLoc;
+	   xyzLoc[1][1][3] = zLoc;
+	   histoire[1][1].again = TRUE;
+	   izero(histoire[1][1].sequence);
+	   reverseEvents (xyzLoc, histoire, 1, 1);
+	   taste(numEvents, histoire[1][1].sequence, rockType, index);
+
+	   event = (OBJECT *) nthObject (NULL_WIN, *index);
+	   if ((event->shape == PLUG) || (event->shape == DYKE))
+		   *rockType=getIgnRock (*index);
+	   else
+	   {
+		 alayer = whichLayer (*index, xyzLoc[1][1][1],xyzLoc[1][1][2], xyzLoc[1][1][3]);
+	     for (i = 0; i < numProps; i++)
+	       if (properties[i] == alayer)
+	       {
+	    	 *rockType = i+1;
+	          break;
+	       }
+	   }
+
+
+	    destroy3DArray ((char ***) xyzLoc,  2, 2, 4);
+	    destroy2DArray ((char **) histoire, 2, 2);
+}
+
+void whatDiff(xLoc1, yLoc1, zLoc1, xLoc2, yLoc2, zLoc2,lDiff,eventCode,rock1,rock2)
+double xLoc1, yLoc1, zLoc1,xLoc2, yLoc2, zLoc2;
+int *lDiff,*eventCode,*rock1,*rock2;
+{
+    STORY **histoire1,**histoire2;
+    double ***xyzLoc1,***xyzLoc2;
+    int numEvents = countObjects(NULL_WIN);
+    LAYER_PROPERTIES *alayer=NULL,*properties[50];
+	int i,numProps;
+	numProps = assignPropertiesForStratLayers (properties, 50);
+	int ind;
+	OBJECT *p = NULL;
+	WINDOW listWindow;
+
+	listWindow = (WINDOW) getEventDrawingWindow ();
+
+	xyzLoc1 = (double ***) create3DArray (2, 2, 4, sizeof(double));
+	histoire1 = (STORY **) create2DArray (2, 2, sizeof(STORY));
+	xyzLoc2 = (double ***) create3DArray (2, 2, 4, sizeof(double));
+	histoire2 = (STORY **) create2DArray (2, 2, sizeof(STORY));
+
+    xyzLoc1[1][1][1] = xLoc1;
+    xyzLoc1[1][1][2] = yLoc1;
+    xyzLoc1[1][1][3] = zLoc1;
+    histoire1[1][1].again = TRUE;
+    izero(histoire1[1][1].sequence);
+    reverseEvents (xyzLoc1, histoire1, 1, 1);
+
+    xyzLoc2[1][1][1] = xLoc2;
+    xyzLoc2[1][1][2] = yLoc2;
+    xyzLoc2[1][1][3] = zLoc2;
+    histoire2[1][1].again = TRUE;
+    izero(histoire2[1][1].sequence);
+    reverseEvents (xyzLoc2, histoire2, 1, 1);
+
+    taste(numEvents, histoire1[1][1].sequence, rock1, &ind);
+    whichRock(xyzLoc1[1][1][1],xyzLoc1[1][1][2], xyzLoc1[1][1][3],rock1,&ind);
+
+    taste(numEvents, histoire2[1][1].sequence, rock2, &ind);
+    whichRock(xyzLoc2[1][1][1],xyzLoc2[1][1][2], xyzLoc2[1][1][3],rock2,&ind);
+
+    *lDiff=lastdiff(&(histoire1[1][1].sequence),&(histoire2[1][1].sequence));
+    if(*lDiff > 0)
+    {
+    	p = (OBJECT *) nthObject (listWindow, *lDiff);
+        if (!p) return;
+        *eventCode = (int) p->shape;
+    }
+    else
+    	*eventCode =0;
+
+    if(*eventCode==2)      // fault
+    	*eventCode =1;
+    else if(*eventCode==3) // unc
+    	*eventCode =2;
+    else if(*eventCode==5) // dyke
+    	*eventCode =4;
+    else if(*eventCode==6) // plug
+    	*eventCode =8;
+
+    destroy3DArray ((char ***) xyzLoc1,  2, 2, 4);
+	destroy2DArray ((char **) histoire1, 2, 2);
+    destroy3DArray ((char ***) xyzLoc2,  2, 2, 4);
+	destroy2DArray ((char **) histoire2, 2, 2);
+
+    return;
+}
+
+int getIgnRock (int IgnEvent)
+{
+   OBJECT *object;
+   STRATIGRAPHY_OPTIONS *stratOptions;
+   IMPORT_OPTIONS *importOptions;
+   int numEvents, totalLayers = 0, event, layer;
+                            /* ********************************************* */
+                            /* make up an array off the colors of the layers */
+   for (event = 0, numEvents = (int) countObjects (NULL_WIN);
+                                                  event < numEvents; event++)
+   {
+      object = (OBJECT *) nthObject (NULL_WIN, event);
+      if ((object->shape == STRATIGRAPHY) || (object->shape == UNCONFORMITY))
+      {
+         stratOptions = (STRATIGRAPHY_OPTIONS *)
+                            getStratigraphyOptionsStructure (object);
+         for (layer = stratOptions->numLayers-1; layer >= 0; layer--)
+         {
+            totalLayers++;
+          }
+
+      }
+      if (object->shape == IMPORT)
+      {
+         importOptions = (IMPORT_OPTIONS *) object->options;
+         for (layer = 0; layer < importOptions->numProperties; layer++)
+         {
+            totalLayers++;
+          }
+      }
+   }
+   for (event = 0; event <= IgnEvent; event++)
+   {
+      object = (OBJECT *) nthObject (NULL_WIN, event);
+      if ((object->shape == DYKE) || (object->shape == PLUG))
+      {
+         totalLayers++;
+                      /* make sure we dont overflow array */
+      }
+   }
+
+   return (totalLayers);
+}
+int getStratRock (int stratEvent, int thislayer)
+{
+   OBJECT *object;
+   STRATIGRAPHY_OPTIONS *stratOptions;
+   IMPORT_OPTIONS *importOptions;
+   int numEvents, totalLayers = 0, event, layer;
+                            /* ********************************************* */
+                            /* make up an array off the colors of the layers */
+   for (event = 0, numEvents = (int) countObjects (NULL_WIN);
+                                                  event <= stratEvent; event++)
+   {
+      object = (OBJECT *) nthObject (NULL_WIN, event);
+
+	  if ((object->shape == STRATIGRAPHY) || (object->shape == UNCONFORMITY))
+	  {
+		  stratOptions = (STRATIGRAPHY_OPTIONS *)
+						getStratigraphyOptionsStructure (object);
+		  for (layer = thislayer; layer >= 0; layer--)
+		  {
+			  totalLayers++;
+		  }
+       }
+
+   }
+
+
+   return (totalLayers);
+}
+
+int getStratMax (int stratEvent)
+{
+   OBJECT *object;
+   STRATIGRAPHY_OPTIONS *stratOptions;
+   IMPORT_OPTIONS *importOptions;
+   int numEvents, totalLayers = 0, event, layer;
+                            /* ********************************************* */
+                            /* make up an array off the colors of the layers */
+   for (event = 0, numEvents = (int) countObjects (NULL_WIN);
+                                                  event <= stratEvent; event++)
+   {
+      object = (OBJECT *) nthObject (NULL_WIN, event);
+
+	  if ((object->shape == STRATIGRAPHY) || (object->shape == UNCONFORMITY))
+	  {
+		  stratOptions = (STRATIGRAPHY_OPTIONS *)
+						getStratigraphyOptionsStructure (object);
+		  for (layer = stratOptions->numLayers-1; layer >= 0; layer--)
+		  {
+			  totalLayers++;
+		  }
+       }
+
+   }
+
+
+   return (totalLayers);
+}

@@ -76,7 +76,7 @@ int GammaCalcPlanes(double [8][3], TETINFO *, double [3], int);
 int oneGammaPlane(double [8][3], double [3], TETINFO *, int);
 int GammaBreakPlane( double [8][3], TETINFO *, int [8]);
 int GammaSortMids( double [8][3], TETINFO *);
-int DoGammaTraps(int, int [8], TETINFO *);
+int DoGammaTraps(int, int [8], TETINFO *, double [8][3]);
 int LoneTriangle(double [8][3], TETINFO *, int, int [8]);
 int gstoreBreakMids(double [4][3],int);
 int AddEndMids(TETINFO *);
@@ -116,7 +116,8 @@ TETINFO *t;
    OBJECT *event;
    int numEvents = countObjects(NULL_WIN);
    LAYER_PROPERTIES *properties;    
-    
+   int rockCode;
+
    t->pC=1;  /* to allow for end points in gbreakmp */
    nn=0;
             
@@ -196,8 +197,10 @@ TETINFO *t;
                                    properties->color.green,
                                    properties->color.blue);
            
-         sprintf(clayer,"S%02dL%02d%04d",i,m,SeqCode[t->GoodPts[0]]);
-                           
+         /*sprintf(clayer,"S%02dL%02d%04d",i,m,SeqCode[t->GoodPts[0]]);*/
+         rockCode=getStratRock (index, event->generalData-1)-1;
+         sprintf(clayer,"S_%02d_%02d_%03d_%03d_%03d", i, event->generalData-1,SeqCode[t->GoodPts[0]],rockCode,rockCode-1);
+
          GammaFindMids(level,Values,Points,t, MidPoints, &NMids,SeqCode);   
                                                    /* draw strat surfaces */
          GammaCalcPlanes(Points, t,MidPoints,NMids);
@@ -356,7 +359,7 @@ int SeqCode[8];
       GammaSortMids (Points, t);
       
    for (mm = 0; mm < t->pC; mm++)
-      DoGammaTraps (mm, SeqCode, t);
+      DoGammaTraps (mm, SeqCode, t, Points);
    return (TRUE);
 }
 
@@ -412,21 +415,81 @@ TETINFO *t;
 
 int
 #if XVT_CC_PROTO
-DoGammaTraps(int pCount, int SeqCode[8], TETINFO *t)
+DoGammaTraps(int pCount, int SeqCode[8], TETINFO *t, double Points[8][3] )
 #else
-DoGammaTraps(pCount, SeqCode, t)
+DoGammaTraps(pCount, SeqCode, t, Points)
 int pCount, SeqCode[8];
 TETINFO *t;
+double Points[8][3];
 #endif
 {
-   OBJECT *object;
+   OBJECT *object,*Inevent,*Exevent;
+   int Inindex,Exindex;
+   unsigned int pflavor=0;
    double conlist[4][3];
-   
+   LAYER_PROPERTIES *inLayer,*exLayer;
+   int ExeventIndex,IneventIndex;
+   int numEvents = countObjects(NULL_WIN);
+   int break_code;
+   unsigned int InrockType,ExrockType;
+   int inRock,exRock;
+   int lDiff,eventCode,rock1,rock2;
+   STRATIGRAPHY_OPTIONS *InstratOptions,*ExstratOptions;
+   int sMax,sMin;
+
    if (object = SetCLayer((unsigned char *) &(t->cypher[SeqCode[t->GoodPts[0]]]),
                  (unsigned char *) &(t->cypher[SeqCode[t->GoodPts[2]]]),
                  SeqCode[t->GoodPts[0]], SeqCode[t->GoodPts[2]]))
    {
-      conlist[0][0]=gbreakmp[pCount][1][0];
+
+	   taste(numEvents, t->cypher[SeqCode[t->GoodPts[0]]], &InrockType, &IneventIndex);
+	   taste(numEvents, t->cypher[SeqCode[t->GoodPts[2]]], &ExrockType, &ExeventIndex);
+	   inLayer=whichLayer(IneventIndex, Points[t->GoodPts[0]][0], Points[t->GoodPts[0]][1], Points[t->GoodPts[0]][2]);
+	   exLayer=whichLayer(ExeventIndex, Points[t->GoodPts[2]][0], Points[t->GoodPts[2]][1], Points[t->GoodPts[2]][2]);
+	   break_code = lastdiff((unsigned char *) &(t->cypher[SeqCode[t->GoodPts[0]]]),
+	           (unsigned char *) &(t->cypher[SeqCode[t->GoodPts[2]]]));
+
+	   whichRock( Points[t->GoodPts[0]][0], Points[t->GoodPts[0]][1], Points[t->GoodPts[0]][2], &inRock, &IneventIndex);
+	   whichRock( Points[t->GoodPts[2]][0], Points[t->GoodPts[2]][1], Points[t->GoodPts[2]][2], &exRock, &ExeventIndex);
+	   whatDiff(Points[t->GoodPts[0]][0], Points[t->GoodPts[0]][1], Points[t->GoodPts[0]][2],
+			    Points[t->GoodPts[2]][0], Points[t->GoodPts[2]][1], Points[t->GoodPts[2]][2],&lDiff,&eventCode,&rock1,&rock2);
+
+	   taste(numEvents, (unsigned char *) &(t->cypher[SeqCode[t->GoodPts[0]]]), &pflavor, &Inindex);
+	   taste(numEvents, (unsigned char *) &(t->cypher[SeqCode[t->GoodPts[2]]]), &pflavor, &Exindex);
+
+	   sMax=getStratMax (Inindex);
+	   if(Inindex-1>=0)
+		   sMin=getStratMax (Inindex-1);
+	   else
+		   sMin=0;
+	   if (Inevent = (OBJECT *) nthObject (NULL_WIN, Inindex))
+		   if((Inevent->shape == STRATIGRAPHY) || (Inevent->shape == UNCONFORMITY))
+			   inRock=sMin+sMax-inRock+1;
+
+	   sMax=getStratMax (Exindex);
+	   if(Exindex-1>=0)
+		   sMin=getStratMax (Exindex-1);
+	   else
+		   sMin=0;
+	   if (Exevent = (OBJECT *) nthObject (NULL_WIN, Exindex))
+		   if((Exevent->shape == STRATIGRAPHY) || (Exevent->shape == UNCONFORMITY))
+			   exRock=sMin+sMax-exRock+1;
+
+	   if(inRock < exRock)
+		   if(SeqCode[t->GoodPts[0]] < SeqCode[t->GoodPts[2]])
+			   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->GoodPts[0]], SeqCode[t->GoodPts[2]],inRock,exRock);
+		   else
+			   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->GoodPts[2]],SeqCode[t->GoodPts[0]], inRock,exRock);
+	   else
+		   if(SeqCode[t->GoodPts[0]] < SeqCode[t->GoodPts[2]])
+			   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->GoodPts[0]], SeqCode[t->GoodPts[2]],exRock,inRock);
+		   else
+			   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->GoodPts[2]],SeqCode[t->GoodPts[0]], exRock,inRock);
+
+
+
+
+	  conlist[0][0]=gbreakmp[pCount][1][0];
       conlist[0][1]=gbreakmp[pCount][1][1];
       conlist[0][2]=gbreakmp[pCount][1][2];
       
@@ -451,6 +514,52 @@ TETINFO *t;
                  (unsigned char *) &(t->cypher[SeqCode[t->GoodPts[3]]]),
                  SeqCode[t->GoodPts[0]], SeqCode[t->GoodPts[3]]))
    {
+
+	   taste(numEvents, t->cypher[SeqCode[t->GoodPts[0]]], &InrockType, &IneventIndex);
+	   taste(numEvents, t->cypher[SeqCode[t->GoodPts[3]]], &ExrockType, &ExeventIndex);
+	   inLayer=whichLayer(IneventIndex, Points[t->GoodPts[0]][0], Points[t->GoodPts[0]][1], Points[t->GoodPts[0]][2]);
+	   exLayer=whichLayer(ExeventIndex, Points[t->GoodPts[2]][0], Points[t->GoodPts[2]][1], Points[t->GoodPts[2]][2]);
+	   break_code = lastdiff((unsigned char *) &(t->cypher[SeqCode[t->GoodPts[0]]]),
+	           (unsigned char *) &(t->cypher[SeqCode[t->GoodPts[3]]]));
+
+	   whichRock( Points[t->GoodPts[0]][0], Points[t->GoodPts[0]][1], Points[t->GoodPts[0]][2], &inRock, &IneventIndex);
+	   whichRock( Points[t->GoodPts[3]][0], Points[t->GoodPts[3]][1], Points[t->GoodPts[3]][2], &exRock, &ExeventIndex);
+	   whatDiff(Points[t->GoodPts[0]][0], Points[t->GoodPts[0]][1], Points[t->GoodPts[0]][2],
+			    Points[t->GoodPts[3]][0], Points[t->GoodPts[3]][1], Points[t->GoodPts[3]][2],&lDiff,&eventCode,&rock1,&rock2);
+
+	   taste(numEvents, (unsigned char *) &(t->cypher[SeqCode[t->GoodPts[0]]]), &pflavor, &Inindex);
+	   taste(numEvents, (unsigned char *) &(t->cypher[SeqCode[t->GoodPts[3]]]), &pflavor, &Exindex);
+
+	   sMax=getStratMax (Inindex);
+	   if(Inindex-1>=0)
+		   sMin=getStratMax (Inindex-1);
+	   else
+		   sMin=0;
+	   if (Inevent = (OBJECT *) nthObject (NULL_WIN, Inindex))
+		   if((Inevent->shape == STRATIGRAPHY) || (Inevent->shape == UNCONFORMITY))
+			   inRock=sMin+sMax-inRock+1;
+
+	   sMax=getStratMax (Exindex);
+	   if(Exindex-1>=0)
+		   sMin=getStratMax (Exindex-1);
+	   else
+		   sMin=0;
+	   if (Exevent = (OBJECT *) nthObject (NULL_WIN, Exindex))
+		   if((Exevent->shape == STRATIGRAPHY) || (Exevent->shape == UNCONFORMITY))
+			   exRock=sMin+sMax-exRock+1;
+
+	   if(inRock < exRock)
+		   if(SeqCode[t->GoodPts[0]] < SeqCode[t->GoodPts[3]])
+			   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->GoodPts[0]], SeqCode[t->GoodPts[3]],inRock,exRock);
+		   else
+			   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->GoodPts[3]],SeqCode[t->GoodPts[0]], inRock,exRock);
+	   else
+		   if(SeqCode[t->GoodPts[0]] < SeqCode[t->GoodPts[3]])
+			   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->GoodPts[0]], SeqCode[t->GoodPts[3]],exRock,inRock);
+		   else
+			   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->GoodPts[3]],SeqCode[t->GoodPts[0]], exRock,inRock);
+
+
       conlist[2][0]=gbreakmp[pCount+1][2][0];
       conlist[2][1]=gbreakmp[pCount+1][2][1];
       conlist[2][2]=gbreakmp[pCount+1][2][2];
@@ -476,15 +585,73 @@ TETINFO *t;
 int NMids, SeqCode[8];
 #endif
 {  
-   OBJECT *object;
+   OBJECT *object,*Inevent,*Exevent;
+   int Inindex,Exindex;
+   unsigned int pflavor=0;
    double conlist[4][3];
    int mm;
+   LAYER_PROPERTIES *inLayer,*exLayer;
+   int ExeventIndex,IneventIndex;
+   int numEvents = countObjects(NULL_WIN);
+   int break_code;
+   unsigned int InrockType,ExrockType;
+   int inRock,exRock;
+   int lDiff,eventCode,rock1,rock2;
+   STRATIGRAPHY_OPTIONS *InstratOptions,*ExstratOptions;
+   int sMax,sMin;
+
 
    if (!(object = SetCLayer((unsigned char *) &(t->cypher[SeqCode[t->GoodPts[2]]]),
                   (unsigned char *) &(t->cypher[SeqCode[t->GoodPts[3]]]),
                   SeqCode[t->GoodPts[2]], SeqCode[t->GoodPts[3]])))
-      return (FALSE);
-   
+   {
+       return (FALSE);
+   }
+   taste(numEvents, t->cypher[SeqCode[t->GoodPts[2]]], &InrockType, &IneventIndex);
+   taste(numEvents, t->cypher[SeqCode[t->GoodPts[3]]], &ExrockType, &ExeventIndex);
+   inLayer=whichLayer(IneventIndex, Points[t->GoodPts[2]][0], Points[t->GoodPts[2]][1], Points[t->GoodPts[2]][2]);
+   exLayer=whichLayer(ExeventIndex, Points[t->GoodPts[3]][0], Points[t->GoodPts[3]][1], Points[t->GoodPts[3]][2]);
+   break_code = lastdiff((unsigned char *) &(t->cypher[SeqCode[t->GoodPts[2]]]),
+           (unsigned char *) &(t->cypher[SeqCode[t->GoodPts[3]]]));
+   //sprintf(clayer,"BG_%03d_%c%c_%c%c",break_code,inLayer->unitName[0],inLayer->unitName[1],exLayer->unitName[0],exLayer->unitName[1]);
+
+   whichRock( Points[t->GoodPts[2]][0], Points[t->GoodPts[2]][1], Points[t->GoodPts[2]][2], &inRock, &IneventIndex);
+   whichRock( Points[t->GoodPts[3]][0], Points[t->GoodPts[3]][1], Points[t->GoodPts[3]][2], &exRock, &ExeventIndex);
+   whatDiff(Points[t->GoodPts[2]][0], Points[t->GoodPts[2]][1], Points[t->GoodPts[2]][2],
+		    Points[t->GoodPts[3]][0], Points[t->GoodPts[3]][1], Points[t->GoodPts[3]][2],&lDiff,&eventCode,&rock1,&rock2);
+
+   taste(numEvents, (unsigned char *) &(t->cypher[SeqCode[t->GoodPts[2]]]), &pflavor, &Inindex);
+   taste(numEvents, (unsigned char *) &(t->cypher[SeqCode[t->GoodPts[3]]]), &pflavor, &Exindex);
+
+   sMax=getStratMax (Inindex);
+   if(Inindex-1>=0)
+	   sMin=getStratMax (Inindex-1);
+   else
+	   sMin=0;
+   if (Inevent = (OBJECT *) nthObject (NULL_WIN, Inindex))
+	   if((Inevent->shape == STRATIGRAPHY) || (Inevent->shape == UNCONFORMITY))
+		   inRock=sMin+sMax-inRock+1;
+
+   sMax=getStratMax (Exindex);
+   if(Exindex-1>=0)
+	   sMin=getStratMax (Exindex-1);
+   else
+	   sMin=0;
+   if (Exevent = (OBJECT *) nthObject (NULL_WIN, Exindex))
+	   if((Exevent->shape == STRATIGRAPHY) || (Exevent->shape == UNCONFORMITY))
+		   exRock=sMin+sMax-exRock+1;
+
+   if(inRock < exRock)
+	   if(SeqCode[t->GoodPts[2]] < SeqCode[t->GoodPts[3]])
+		   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->GoodPts[2]], SeqCode[t->GoodPts[3]],inRock,exRock);
+	   else
+		   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->GoodPts[3]],SeqCode[t->GoodPts[2]], inRock,exRock);
+   else
+	   if(SeqCode[t->GoodPts[2]] < SeqCode[t->GoodPts[3]])
+		   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->GoodPts[2]], SeqCode[t->GoodPts[3]],exRock,inRock);
+	   else
+		   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->GoodPts[3]],SeqCode[t->GoodPts[2]], exRock,inRock);
+
    for (mm = 0; mm < 2; mm++)
    {
       conlist[mm][0]=FaceMids[mm][0];

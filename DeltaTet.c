@@ -67,7 +67,7 @@ extern OBJECT *SetCLayer();
 int DeltaFindEdgeMids(double [8][3], TETINFO *);
 int DeltaFindMids(double, double [8], double [8][3], TETINFO *, int [8], int , int *);
 int DeltaCalcPlanes(TETINFO *, int, int);
-int DeltaBreakPlane( TETINFO *, int [8]);
+int DeltaBreakPlane( TETINFO *, int [8], double [8][3]);
 double MidVal(double,double, double);
 #else
 int DeltaFindEdgeMids();
@@ -102,6 +102,7 @@ TETINFO *t;
    OBJECT *event;
    int numEvents = countObjects(NULL_WIN);
    LAYER_PROPERTIES *properties;    
+   int rockCode;
     
    t->pC=1;
    t->pC2=1;
@@ -136,6 +137,9 @@ TETINFO *t;
       t->ExCode=TETAPICES[t->tinc][0];
       t->InCode=TETAPICES[t->tinc][1];
    }
+   else
+	   printf("oops delta\n");
+
 
    DeltaFindEdgeMids(Points,t);
    
@@ -164,16 +168,19 @@ TETINFO *t;
                                       properties->color.green,
                                       properties->color.blue);
    
-            sprintf(clayer,"S%02dL%02d%04d", index, event->generalData-1,
-                                             SeqCode[t->GoodPts[2*nn]]);
+            /*sprintf(clayer,"S%02dL%02d%04d", index, event->generalData-1,
+                                             SeqCode[t->GoodPts[2*nn]]);*/
+            rockCode=getStratRock (index, event->generalData-1)-1;
+            sprintf(clayer,"S_%02d_%02d_%03d_%03d_%03d", index, event->generalData-1,SeqCode[t->GoodPts[2*nn]],rockCode,rockCode-1);
+
             DeltaFindMids(level, Values, Points, t, SeqCode, nn, &NMids);
 
             DeltaCalcPlanes(t, nn, NMids); /* draw strat surfaces */
          }
       }
    }
-        
-   DeltaBreakPlane(t, SeqCode); /* draw break surfaces */
+
+   DeltaBreakPlane(t, SeqCode, Points); /* draw break surfaces */
 }
 
 int
@@ -285,23 +292,82 @@ int nn, NMids;
 */
 int
 #if XVT_CC_PROTO
-DeltaBreakPlane( TETINFO *t, int SeqCode[8])
+DeltaBreakPlane( TETINFO *t, int SeqCode[8], double Points[8][3])
 #else
 DeltaBreakPlane(t, SeqCode)
 TETINFO *t;
 int SeqCode[8];
+double Points[8][3];
 #endif
 {
-   OBJECT *object;
+   OBJECT *object,*Inevent,*Exevent;
+   int Inindex,Exindex;
+   unsigned int pflavor=0;
    double conlist[4][3]; 
    int mm, nn, pp;
+   LAYER_PROPERTIES *inLayer,*exLayer;
+   int ExeventIndex,IneventIndex;
+   int numEvents = countObjects(NULL_WIN);
+   int break_code;
+   unsigned int InrockType,ExrockType;
+   int inRock, exRock;
+   int lDiff,eventCode,rock1,rock2;
+   STRATIGRAPHY_OPTIONS *InstratOptions,*ExstratOptions;
+   int sMax,sMin;
 
    if (!(object = SetCLayer((unsigned char *) &(t->cypher[SeqCode[t->InCode]]),
                   (unsigned char *) &(t->cypher[SeqCode[t->ExCode]]),
                    SeqCode[t->InCode], SeqCode[t->ExCode])))
-       return (FALSE);
-       
-   for(mm=0;mm<3;mm++)
+   {
+
+	   return (FALSE);
+   }
+
+   taste(numEvents, t->cypher[SeqCode[t->InCode]], &InrockType, &IneventIndex);
+   taste(numEvents, t->cypher[SeqCode[t->ExCode]], &ExrockType, &ExeventIndex);
+   inLayer=whichLayer(IneventIndex, Points[t->InCode][0], Points[t->InCode][1], Points[t->InCode][2]);
+   exLayer=whichLayer(ExeventIndex, Points[t->ExCode][0], Points[t->ExCode][1], Points[t->ExCode][2]);
+   break_code = lastdiff((unsigned char *) &(t->cypher[SeqCode[t->InCode]]),
+               (unsigned char *) &(t->cypher[SeqCode[t->ExCode]]));
+    //sprintf(clayer,"BD_%03d_%c%c_%c%c",break_code,inLayer->unitName[0],inLayer->unitName[1],exLayer->unitName[0],exLayer->unitName[1]);
+	whichRock(  Points[t->InCode][0],Points[t->InCode][1],Points[t->InCode][2], &inRock, &IneventIndex);
+	whichRock(  Points[t->ExCode][0],Points[t->ExCode][1],Points[t->ExCode][2], &exRock, &ExeventIndex);
+	whatDiff(Points[t->InCode][0],Points[t->InCode][1],Points[t->InCode][2],
+			Points[t->ExCode][0],Points[t->ExCode][1],Points[t->ExCode][2],&lDiff,&eventCode,&rock1,&rock2);
+
+	   taste(numEvents, (unsigned char *) &(t->cypher[SeqCode[t->InCode]]), &pflavor, &Inindex);
+	   taste(numEvents, (unsigned char *) &(t->cypher[SeqCode[t->ExCode]]), &pflavor, &Exindex);
+
+	   sMax=getStratMax (Inindex);
+	   if(Inindex-1>=0)
+		   sMin=getStratMax (Inindex-1);
+	   else
+		   sMin=0;
+	   if (Inevent = (OBJECT *) nthObject (NULL_WIN, Inindex))
+		   if((Inevent->shape == STRATIGRAPHY) || (Inevent->shape == UNCONFORMITY))
+			   inRock=sMin+sMax-inRock+1;
+
+	   sMax=getStratMax (Exindex);
+	   if(Exindex-1>=0)
+		   sMin=getStratMax (Exindex-1);
+	   else
+		   sMin=0;
+	   if (Exevent = (OBJECT *) nthObject (NULL_WIN, Exindex))
+		   if((Exevent->shape == STRATIGRAPHY) || (Exevent->shape == UNCONFORMITY))
+			   exRock=sMin+sMax-exRock+1;
+
+	   if(inRock < exRock)
+		   if(SeqCode[t->InCode]< SeqCode[t->ExCode])
+			   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->InCode], SeqCode[t->ExCode],inRock,exRock);
+		   else
+			   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->ExCode], SeqCode[t->InCode], inRock,exRock);
+	   else
+		   if(SeqCode[t->InCode]< SeqCode[t->ExCode])
+			   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->InCode], SeqCode[t->ExCode],exRock,inRock);
+		   else
+			   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode, SeqCode[t->ExCode],SeqCode[t->InCode],exRock,inRock);
+
+	for(mm=0;mm<3;mm++)
    {
       dbreakmids[0][0][0][mm]=dEdgeMids[0][mm];
       dbreakmids[0][0][1][mm]=dEdgeMids[1][mm];

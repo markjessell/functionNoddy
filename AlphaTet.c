@@ -87,7 +87,9 @@ TETINFO *t;
    OBJECT *event;
    int numEvents = countObjects(NULL_WIN);
    LAYER_PROPERTIES *properties;    
-                                                 /* get strat info */
+   int rockCode;
+
+   /* get strat info */
    taste (numEvents,
           (unsigned char *) &(t->cypher[SeqCode[TETAPICES[t->tinc][0]]][0]),
           &flavor, &index);
@@ -110,8 +112,10 @@ TETINFO *t;
          layerColor=XVT_MAKE_COLOR(properties->color.red,
                                    properties->color.green,
                                    properties->color.blue);
-         sprintf(clayer,"S%02dL%02d%04d", index, event->generalData-1,
-                           SeqCode[TETAPICES[t->tinc][0]]);
+         /*sprintf(clayer,"S%02dL%02d%04d", index, event->generalData-1,
+                           SeqCode[TETAPICES[t->tinc][0]]);*/
+         rockCode=getStratRock (index, event->generalData-1)-1;
+         sprintf(clayer,"S_%02d_%02d_%03d_%03d_%03d", index, event->generalData-1,SeqCode[TETAPICES[t->tinc][0]],rockCode,rockCode-1);
                                                      /* get mid points */
          AlphaFindMids(level,Values,Points,t,MidPoints,NMids);
                                                      /* draw one plane */
