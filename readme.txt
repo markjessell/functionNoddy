@@ -6,7 +6,7 @@ noddy input_history  output_prefix
 
 It will generate a *.g00 file (block model header); a *.g12 file (block model itself) and a *.dxf file (triangulated surfaces)
 
-WARNING: This version will crsh if the history file is not set to create either of the two types of DXF triangulations (DXF 3D faces or DXF polylines) rather than Lines, Shading, or Vulcan file. In the history file this should read 
+WARNING: This version will crash if the history file is not set to create either of the two types of DXF triangulations (DXF 3D faces or DXF polylines) rather than Lines, Shading, or Vulcan file. In the history file this should read 
 
 #3DOptions
 .
