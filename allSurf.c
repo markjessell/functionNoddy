@@ -301,8 +301,8 @@ char *filename;
 
    plotScale = plotscale;
    threedDataPtr = threedData;
-   cypher = (unsigned char **) create2DArray (100, ARRAY_LENGTH_OF_STRAT_CODE,
-                                              sizeof(unsigned char));
+   cypher = (unsigned char **) create2DArray (5000, ARRAY_LENGTH_OF_STRAT_CODE,
+                                              sizeof(unsigned char)); // for really complex models 5000 contiguous volumes may not be enough?
    if (!cypher)
       return;
    if (!allSurfStart ())
@@ -363,7 +363,8 @@ char *filename;
             if (!found) 
             {                                                  
                cyphno++;
-               iequal(&(cypher[cyphno][0]),dots3DC[z][y][x].sequence);
+               iequal(cypher[cyphno],dots3DC[z][y][x].sequence);// mwj_debug
+               //iequal(&(cypher[cyphno][0]),dots3DC[z][y][x].sequence);// mwj_debug
             }                                                               
          }
       } 
@@ -430,7 +431,7 @@ char *filename;
       alltri = (THREED_POINT_INFO __huge *) NULL;
    }
    if (cypher)
-      destroy2DArray ((char **) cypher, 100, ARRAY_LENGTH_OF_STRAT_CODE);
+      destroy2DArray ((char **) cypher, 5000, ARRAY_LENGTH_OF_STRAT_CODE);
 }
 
 /*

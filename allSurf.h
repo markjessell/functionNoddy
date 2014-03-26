@@ -45,7 +45,7 @@ typedef struct s_TETINFO
    int tinc;   /* tetrahedron code accounting for odd/even cubes */
    int cyphno; /* number of discontinuity codes for whole model */
                /* list of discontinuity codes for whole system */
-   unsigned char cypher[100][ARRAY_LENGTH_OF_STRAT_CODE];
+   unsigned char cypher[5000][ARRAY_LENGTH_OF_STRAT_CODE];
                /* code of apex not part of tetrahedron which could have a
                ** stratigraphic triangle */
    int ExCode;
