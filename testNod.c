@@ -8,14 +8,15 @@
 
 extern int noddy (DATA_INPUT, DATA_OUTPUT, int, char *, char *,
                   BLOCK_VIEW_OPTIONS *, GEOPHYSICS_OPTIONS *);
+void whereRock( double *xLoc, double *yLoc, double *zLoc, int *rockType, int *index);
 
 
 int main (int argc, char *argv[])
 {
-   double x,y,z;
-   int rock1,rock2,breakcode,eventcode;
+   double x,y,z,x2,y2,z2;
+   int rockType,index;
 
-   if (argc < 2)
+   if (argc < 3)
    {
       printf ("Arguments <historyfile> <outputfile>\n");
       return (-1);
@@ -32,14 +33,19 @@ int main (int argc, char *argv[])
 
 
 
-   /*for(x=0;x<=10000;x+=250)
+  /*
+   * example code for exporting pre-deformation locations of a volume of points
+   * for(z=5000;z>=2000;z-=250)
 	   for(y=0;y<=7000;y+=250)
-		   for(z=5000;z>=2000;z-=250)
+		   for(x=0;x<=10000;x+=250)
 		   {
-			   whatDiff(x, y, z, x+250, y, z,&breakcode,&eventcode,&rock1,&rock2);
-			   printf("%lf\t%lf\t%lf\t%d\t%d\t%d\t%d\n",x, y, z,breakcode,eventcode,rock1,rock2);
+			   x2=x;
+			   y2=y;
+			   z2=z;
+			   whereRock(&x2, &y2, &z2,&rockType,&index);
+			   printf("%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%d\t%d\t%d\t%d\n",x,y,z,x2, y2, z2,rockType,index);
 		   }
-	*/
+      */
 
    return (TRUE);
 }
