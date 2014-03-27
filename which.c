@@ -32,6 +32,7 @@
                  /* Globals used in this file */
 LAYER_PROPERTIES *getClosestImportBlock ();
 void whichRock( double xLoc, double yLoc, double zLoc, int *rockType, int *index);
+void whereRock( double *xLoc, double *yLoc, double *zLoc, int *rockType, int *index);
 
 #ifndef _MPL
 COLOR which(xcord,ycord,index, xLoc, yLoc, zLoc,flavor)
@@ -476,6 +477,53 @@ int *index;
 	       }
 	   }
 
+
+	    destroy3DArray ((char ***) xyzLoc,  2, 2, 4);
+	    destroy2DArray ((char **) histoire, 2, 2);
+}
+
+void whereRock(xLoc, yLoc, zLoc,rockType,index)
+double *xLoc, *yLoc, *zLoc;
+int *rockType;
+int *index;
+{
+	   STORY **histoire;
+	   double ***xyzLoc;
+	   int numEvents = countObjects(NULL_WIN);
+	   LAYER_PROPERTIES *alayer=NULL,*properties[50];
+       int i,numProps;
+       OBJECT *event;
+
+       numProps = assignPropertiesForStratLayers (properties, 50);
+
+       xyzLoc = (double ***) create3DArray (2, 2, 4, sizeof(double));
+       histoire = (STORY **) create2DArray (2, 2, sizeof(STORY));
+
+	   xyzLoc[1][1][1] = *xLoc;
+	   xyzLoc[1][1][2] = *yLoc;
+	   xyzLoc[1][1][3] = *zLoc;
+	   histoire[1][1].again = TRUE;
+	   izero(histoire[1][1].sequence);
+	   reverseEvents (xyzLoc, histoire, 1, 1);
+	   taste(numEvents, histoire[1][1].sequence, rockType, index);
+
+	   event = (OBJECT *) nthObject (NULL_WIN, *index);
+	   if ((event->shape == PLUG) || (event->shape == DYKE))
+		   *rockType=getIgnRock (*index);
+	   else
+	   {
+		 alayer = whichLayer (*index, xyzLoc[1][1][1],xyzLoc[1][1][2], xyzLoc[1][1][3]);
+	     for (i = 0; i < numProps; i++)
+	       if (properties[i] == alayer)
+	       {
+	    	 *rockType = i+1;
+	          break;
+	       }
+	   }
+
+	   *xLoc = xyzLoc[1][1][1];
+	   *yLoc = xyzLoc[1][1][2];
+	   *zLoc = xyzLoc[1][1][3];
 
 	    destroy3DArray ((char ***) xyzLoc,  2, 2, 4);
 	    destroy2DArray ((char **) histoire, 2, 2);
