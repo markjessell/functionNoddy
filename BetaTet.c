@@ -106,8 +106,8 @@ int GetCommonPentagonVertex();
 int SameSide();
 #endif
 
-double breakmp[7][2][3]; /* 7 because only 7 layers in one strat */
-int    breakline[7][3];  /* 7 because only 7 layers in one strat */
+double breakmp[100][2][3]; /* 7 because only 7 layers in one strat but now 100 possible! mwj*/
+int    breakline[100][3];  /* 7 because only 7 layers in one strat but now 100 possible! mwj*/
 int whichRock(double xLoc, double yLoc, double zLoc, int *rockType,int *index);
  
 /*
@@ -823,8 +823,8 @@ TETINFO *t;
 #endif
 {
    int firstv,lastv,mm,nn,pp;
-   double tempbreakmp[7][2][3]; /* 7 because only 7 layers in one strat */
-   int    tempbreakline[7][2];  /* 7 because only 7 layers in one strat */
+   double tempbreakmp[100][2][3]; /* 7 because only 7 layers in one strat but now a 100 is possible! mwj*/
+   int    tempbreakline[100][2];  /* 7 because only 7 layers in one strat but now a 100 is possible! mwj*/
 
    if(t->pC==1)
    {

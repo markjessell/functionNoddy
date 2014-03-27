@@ -53,8 +53,8 @@ extern THREED_VIEW_OPTIONS threedViewOptions;
 extern char clayer[81];/* global array for current layer name */
 extern LAYER_PROPERTIES *renderLayer ();
 
-double gbreakmp[9][3][3]; /* 7 because only 7 layers in one strat */
-int    gbreakline[7];  /* 7 because only 7 layers in one strat */
+double gbreakmp[100][3][3]; /* 7 because only 7 layers in one strat but now 100 mwj*/
+int    gbreakline[100];  /* 7 because only 7 layers in one strat but now 100 mwj*/
 double FaceMids[2][3],delcon;
 double EdgeMids[4][3];
 
@@ -373,7 +373,7 @@ double Points[8][3];
 TETINFO *t;
 #endif
 {
-   double tempbreakmp[7][3][3]; /* 7 because only 7 layers in one strat */
+   double tempbreakmp[100][3][3]; /* 7 because only 7 layers in one strat */
    double firstlength=0,lastlength=0;
    int nn,pp,mm;
    
