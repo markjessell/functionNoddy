@@ -2,7 +2,16 @@ This is the batch (and function) version of Noddy that simply takes a history fi
 
 Usage:
 
-noddy input_history  output_prefix
+noddy input_history  output_prefix calc_mode
+
+calc_mode = one of 
+
+BLOCK_MODEL       
+GEOPHYSICS   
+SURFACES
+BLOCK_GEOPHYS
+ALL 
+
 
 It will generate a *.g00 file (block model header); a *.g12 file (block model itself) and a *.dxf file (triangulated surfaces)
 
