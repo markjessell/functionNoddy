@@ -461,7 +461,7 @@ float ***densityData,     ***magSusData,      ***remSusDecData,
       write3DIregBlockToFile (blockName, (char ***) indexData,
                        numLayers, layerDimensions, sizeof(short));
       //doTopology(blockName,(char ***) indexData);
-      do3dStratMap ((THREED_IMAGE_DATA *) NULL, dxfname);
+      //do3dStratMap ((THREED_IMAGE_DATA *) NULL, dxfname); //comment out for for ipython
 
    }
    else

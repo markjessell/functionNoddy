@@ -935,7 +935,8 @@ double version;
    loadit(status,"%lf",(void *) &threedViewOptions.offset_Z);
 
    loadit(status,"%d",(void *) &num);
-   threedViewOptions.fillType = num;
+   //threedViewOptions.fillType = num;//mwj_hack
+   threedViewOptions.fillType = 3;//mwj_hack so always DXF 3D Face in batch mode
    DEBUG(printf("\nLOAD_3d: FINISHED");)
    return (TRUE);
 }

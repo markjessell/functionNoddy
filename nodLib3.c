@@ -227,7 +227,6 @@ int getMachineUniqueLicence ();
 int initProject ();
 #endif
 int doTopology(char *output, char ***data);
-int processTopology(char *output);
 
 /* ======================================================================
 FUNCTION        getWindowStartPosition
@@ -3500,7 +3499,7 @@ OPERATIONS operation;
 ======================================================================
 FUNCTION        noddy
 DESCRIPTION
-   function vertion of Noddy, take an array
+   function version of Noddy, take an array
 INPUT   
 OUTPUT
 RETURNED
@@ -3521,8 +3520,8 @@ BLOCK_VIEW_OPTIONS *viewOptions;
 GEOPHYSICS_OPTIONS *geophOptions;
 #endif
 {
-   int calcBlock, calcMag, calcGrav;
-   char blockFile[100];
+   int calcBlock, calcMag, calcGrav,calcSurf;
+   char blockFile[100],dxfname[250];
 
    if ( !input || !output)
       return (FALSE);
@@ -3535,6 +3534,7 @@ GEOPHYSICS_OPTIONS *geophOptions;
    calcBlock =  operation && CALC_BLOCK_MODEL;
    calcMag =  operation && CALC_MAGNETICS_IMAGE;
    calcGrav =  operation && CALC_GRAVITY_IMAGE;
+   calcSurf =  operation && CALC_SURF_MODEL;
    
    switch (inputFrom)
    {
@@ -3555,23 +3555,28 @@ GEOPHYSICS_OPTIONS *geophOptions;
    if (!viewOptions)
       viewOptions = getViewOptions ();
 
-   if (calcMag || calcGrav)
-   {
-      if (calcBlock)//mwj_hack
+   if (operation == 1)
+         doGeophysics (BLOCK_ONLY, viewOptions, geophOptions, output, output, NULL, 0, NULL, NULL, NULL); //mwj_hack
+   if (operation == 16)
          doGeophysics (BLOCK_AND_ANOM, viewOptions, geophOptions, output, output, NULL, 0, NULL, NULL, NULL); //mwj_hack
-      else
+   if (operation == 2)
          doGeophysics (ANOM, viewOptions, geophOptions, output, NULL, NULL, 0, NULL, NULL, NULL);
+   if(operation == 8)
+   {
+	   sprintf((char *) dxfname,"%s.dxf",output);
+	   do3dStratMap ((THREED_IMAGE_DATA *) NULL, dxfname);
    }
-   else
-      doGeophysics (BLOCK_ONLY, viewOptions, geophOptions, output, output, NULL, 0, NULL, NULL, NULL);
+   if(operation == 32)
+   {
+	   sprintf((char *) dxfname,"%s.dxf",output);
+	   doGeophysics (BLOCK_AND_ANOM, viewOptions, geophOptions, output, output, NULL, 0, NULL, NULL, NULL);
+	   do3dStratMap ((THREED_IMAGE_DATA *) NULL, dxfname);
+   }
    //memManagerFreeAll ();
    
    return (TRUE);
 }
-int processTopology(char *output)
-{
-		
-}
+
 
 int doTopology(char *output, char ***data)
 {
