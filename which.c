@@ -538,11 +538,11 @@ int *lDiff,*eventCode,*rock1,*rock2;
     int numEvents = countObjects(NULL_WIN);
     LAYER_PROPERTIES *alayer=NULL,*properties[50];
 	int i,numProps;
-	numProps = assignPropertiesForStratLayers (properties, 50);
 	int ind;
 	OBJECT *p = NULL;
 	WINDOW listWindow;
 
+	numProps = assignPropertiesForStratLayers (properties, 50);
 	listWindow = (WINDOW) getEventDrawingWindow ();
 
 	xyzLoc1 = (double ***) create3DArray (2, 2, 4, sizeof(double));
