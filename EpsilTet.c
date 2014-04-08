@@ -63,11 +63,22 @@ int SeqCode[8];
 TETINFO *t;
 #endif
 {
-   OBJECT *object;
+   OBJECT *object,*Inevent,*Exevent;
+   int Inindex,Exindex;
+   unsigned int pflavor=0;
    int mm, vert1, vert2;
    double MidPoints[6][3];
    double Centroid[3];
-   
+   LAYER_PROPERTIES *inLayer,*exLayer;
+   int ExeventIndex,IneventIndex;
+   int numEvents = countObjects(NULL_WIN);
+   int break_code;
+   unsigned int InrockType,ExrockType;
+   int inRock, exRock;
+   int lDiff,eventCode,rock1,rock2;
+   STRATIGRAPHY_OPTIONS *InstratOptions,*ExstratOptions;
+   int sMax,sMin;
+
    EpsilonFindMids(Points, MidPoints, Centroid, t);
    
    for (mm = 0; mm < 6; mm++)
@@ -77,7 +88,55 @@ TETINFO *t;
       if (object = SetCLayer((unsigned char *) &(t->cypher[vert1]),
                     (unsigned char *) &(t->cypher[vert2]), vert1, vert2))
       {                                  /* draw break surfaces */
-         EpsilonBreakClean(Points, MidPoints, Centroid, mm, t);
+
+    	  taste(numEvents, t->cypher[vert1], &InrockType, &IneventIndex);
+    	  taste(numEvents, t->cypher[vert2], &ExrockType, &ExeventIndex);
+    	  inLayer=whichLayer(IneventIndex, Points[LINES[TETLINES[t->tinc][mm]][0]][0], Points[LINES[TETLINES[t->tinc][mm]][0]][1], Points[LINES[TETLINES[t->tinc][mm]][0]][2]);
+    	  exLayer=whichLayer(ExeventIndex, Points[LINES[TETLINES[t->tinc][mm]][1]][0], Points[LINES[TETLINES[t->tinc][mm]][1]][1], Points[LINES[TETLINES[t->tinc][mm]][1]][2]);
+    	  break_code = lastdiff((unsigned char *) &(t->cypher[vert1]),
+                  (unsigned char *) &(t->cypher[vert2]));
+    	  //sprintf(clayer,"BE_%03d_%c%c_%c%c",break_code,inLayer->unitName[0],inLayer->unitName[1],exLayer->unitName[0],exLayer->unitName[1]);
+
+    	   whichRock( Points[LINES[TETLINES[t->tinc][mm]][0]][0], Points[LINES[TETLINES[t->tinc][mm]][0]][1], Points[LINES[TETLINES[t->tinc][mm]][0]][2], &inRock, &IneventIndex);
+    	   whichRock( Points[LINES[TETLINES[t->tinc][mm]][1]][0], Points[LINES[TETLINES[t->tinc][mm]][1]][1], Points[LINES[TETLINES[t->tinc][mm]][1]][2], &exRock, &ExeventIndex);
+    	   whatDiff(Points[LINES[TETLINES[t->tinc][mm]][0]][0], Points[LINES[TETLINES[t->tinc][mm]][0]][1], Points[LINES[TETLINES[t->tinc][mm]][0]][2],
+    			    Points[LINES[TETLINES[t->tinc][mm]][1]][0], Points[LINES[TETLINES[t->tinc][mm]][1]][1], Points[LINES[TETLINES[t->tinc][mm]][1]][2],&lDiff,&eventCode,&rock1,&rock2);
+
+
+    	   taste(numEvents, (unsigned char *) &(t->cypher[vert1]), &pflavor, &Inindex);
+    	   taste(numEvents, (unsigned char *) &(t->cypher[vert2]), &pflavor, &Exindex);
+
+    	   sMax=getStratMax (Inindex);
+    	   if(Inindex-1>=0)
+    		   sMin=getStratMax (Inindex-1);
+    	   else
+    		   sMin=0;
+    	   if (Inevent = (OBJECT *) nthObject (NULL_WIN, Inindex))
+    		   if((Inevent->shape == STRATIGRAPHY) || (Inevent->shape == UNCONFORMITY))
+    			   inRock=sMin+sMax-inRock+1;
+
+    	   sMax=getStratMax (Exindex);
+    	   if(Exindex-1>=0)
+    		   sMin=getStratMax (Exindex-1);
+    	   else
+    		   sMin=0;
+    	   if (Exevent = (OBJECT *) nthObject (NULL_WIN, Exindex))
+    		   if((Exevent->shape == STRATIGRAPHY) || (Exevent->shape == UNCONFORMITY))
+    			   exRock=sMin+sMax-exRock+1;
+
+
+    	   if(inRock < exRock)
+    		   if(vert1 < vert2)
+    			   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,vert1, vert2,inRock,exRock);
+    		   else
+    			   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,vert2,vert1,  inRock,exRock);
+    	   else
+    		   if(vert1 < vert2)
+    			   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,vert1, vert2,exRock,inRock);
+    		   else
+    			   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode, vert2,vert1, exRock,inRock);
+
+    	  EpsilonBreakClean(Points, MidPoints, Centroid, mm, t);
       }
    }
    return (TRUE);

@@ -79,14 +79,14 @@ float ****densityData,     ****magSusData,      ****remSusDecData,
       ****aniSusAxis2Data, ****aniSusAxis3Data;
 #endif
 {
-   if (indexCalc)
-   {
+   //if (indexCalc) //save index even if deformable rem or alteration mwj_fix
+   //{
       if (!(*indexData = (short ***) create3DIregArray (numLayers,
                                   layerDimensions, sizeof(short))))
          return (FALSE);
-   }
-   else
-   {
+   //}
+  // else
+   //{
       if (densityCalc)
       {
          if (!(*densityData = (float ***) create3DIregArray (numLayers,
@@ -139,7 +139,7 @@ float ****densityData,     ****magSusData,      ****remSusDecData,
                                   layerDimensions, sizeof(float))))
             return (FALSE);
       }
-   }
+   //}
    return (TRUE);
 }
  
@@ -422,7 +422,7 @@ float ***densityData,     ***magSusData,      ***remSusDecData,
    double xStart, yStart, zStart, xEnd, yEnd, zEnd;
    int nx = 0, ny = 0, cubeSize;
    int i, calcRangeInCubes;
-
+   char dxfname[250];
    cubeSize = cubeSizes[0];
    for (i = 0; i < numLayers; i++)
    {
@@ -444,6 +444,9 @@ float ***densityData,     ***magSusData,      ***remSusDecData,
    for (i = 0, zEnd = zStart; i < numLayers; i++)
       zEnd = zEnd - cubeSizes[i];
 
+
+   sprintf((char *) dxfname,"%s.dxf",blockName);
+
    addFileExtention (blockName, ANOM_HEADER_FILE_EXT);
    writeBlockHeaderToFile (blockName, numLayers, layerDimensions,
              xStart, yStart, zStart, xEnd, yEnd, zEnd,
@@ -452,14 +455,17 @@ float ***densityData,     ***magSusData,      ***remSusDecData,
              options->declination, densityCalc, susCalc, remCalc, aniCalc,
              indexCalc, numProps, layerProps);
              
-   if (indexCalc)
-   {
+  // if (indexCalc)//save index even if deformable rem or alteration mwj_fix
+   //{
       addFileExtention (blockName, ANOM_INDEX_FILE_EXT);
       write3DIregBlockToFile (blockName, (char ***) indexData,
                        numLayers, layerDimensions, sizeof(short));
-   }
-   else
-   {
+      //doTopology(blockName,(char ***) indexData);
+      //do3dStratMap ((THREED_IMAGE_DATA *) NULL, dxfname); //comment out for for ipython
+
+  // }
+   //else
+  // {
       if (densityCalc)
       {
          addFileExtention (blockName, ANOM_DENSITY_FILE_EXT);
@@ -512,7 +518,7 @@ float ***densityData,     ***magSusData,      ***remSusDecData,
          write3DIregBlockToFile (blockName, (char ***) aniSusAxis3Data,
                        numLayers, layerDimensions, sizeof(float));
       }
-   }
+   //}
 
    return (TRUE);
 }

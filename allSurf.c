@@ -289,7 +289,7 @@ char *filename;
    FILE *vulcanFile = NULL;
    int cyphno;
    unsigned char **cypher = NULL;
-   int ii, jj, kk, mm, trot;
+   int ii, jj, kk, mm, trot,nn;
    int SeqCode[8];
    double Points[8][3],  /* the xyz values of points being controured around */
           Values[8];     /* the height of the points being contoured around (after unevents) */
@@ -301,8 +301,8 @@ char *filename;
 
    plotScale = plotscale;
    threedDataPtr = threedData;
-   cypher = (unsigned char **) create2DArray (100, ARRAY_LENGTH_OF_STRAT_CODE,
-                                              sizeof(unsigned char));
+   cypher = (unsigned char **) create2DArray (5000, ARRAY_LENGTH_OF_STRAT_CODE,
+                                              sizeof(unsigned char)); // for really complex models 5000 contiguous volumes may not be enough?
    if (!cypher)
       return;
    if (!allSurfStart ())
@@ -341,7 +341,7 @@ char *filename;
    }
 
 
-                   /* work out how many differnt discontinuity codes are in
+                   /* work out how many different discontinuity codes are in
                    ** the volume */
    iequal(cypher[1], dots3DC[1][1][1].sequence);
    cyphno = 1;
@@ -363,7 +363,8 @@ char *filename;
             if (!found) 
             {                                                  
                cyphno++;
-               iequal(&(cypher[cyphno][0]),dots3DC[z][y][x].sequence);
+               iequal(cypher[cyphno],dots3DC[z][y][x].sequence);// mwj_debug
+               //iequal(&(cypher[cyphno][0]),dots3DC[z][y][x].sequence);// mwj_debug
             }                                                               
          }
       } 
@@ -400,7 +401,7 @@ char *filename;
             allSetVerts(dots3DC, map3D, Points, Values, SeqCode,
                         x, y, kk, plotscale, cyphno, cypher);
             noTri=0;
-            
+
             for (mm = 0; mm < 5; mm++)
             {             /* Clear the 't' structure */
                SetTet(mm, trot, &t); /* store some useful info */
@@ -430,7 +431,7 @@ char *filename;
       alltri = (THREED_POINT_INFO __huge *) NULL;
    }
    if (cypher)
-      destroy2DArray ((char **) cypher, 100, ARRAY_LENGTH_OF_STRAT_CODE);
+      destroy2DArray ((char **) cypher, 5000, ARRAY_LENGTH_OF_STRAT_CODE);
 }
 
 /*
@@ -484,12 +485,21 @@ unsigned char **cypher;
 #endif
 {  
    int mm, nn;
+   BLOCK_VIEW_OPTIONS *viewOptions = getViewOptions ();
+   double xLoco,yLoco,zLoco;
+   double yMax;
+
+   xLoco = viewOptions->originX;
+   yLoco = viewOptions->originY;
+   zLoco = viewOptions->originZ - viewOptions->lengthZ;
+   yMax = viewOptions->originY+viewOptions->lengthY;
+
                  /* Store the locations that will be tested */
    for (mm = 0; mm < 8; mm++)
    {
-      Points[mm][0]=((ii-1)+CUBE[mm][0])*plotscale; 
-      Points[mm][1]=((jj-1)+CUBE[mm][1])*plotscale;
-      Points[mm][2]=((kk-1)+CUBE[mm][2])*plotscale;
+      Points[mm][0]=xLoco+(((ii-1)+CUBE[mm][0])*plotscale)+0.000001;
+      Points[mm][1]=yMax-(yLoco+(((jj-1)+CUBE[mm][1])*plotscale))+0.000001;
+      Points[mm][2]=zLoco+(((kk-1)+CUBE[mm][2])*plotscale)+0.000001;
    }
                
    for (mm = 0; mm < 8; mm++)
@@ -1102,7 +1112,7 @@ int InCode, ExCode;
    OBJECT *object = NULL;
    NODDY_COLOUR *colorStruct;
    int eventNum = 0;
-    
+
    break_code = lastdiff(start1, start2);
    
    if (ExCode < InCode)
@@ -1111,7 +1121,7 @@ int InCode, ExCode;
       InCode=ExCode;
       ExCode=swap_code;
    }
-   sprintf(clayer,"B%03d%03d%03d",break_code,InCode,ExCode);
+   sprintf(clayer,"BX%03d%03d%03d",break_code,InCode,ExCode);
 
                       /* check to make sure the layer is on */
    if (!threedViewOptions.allLayers)

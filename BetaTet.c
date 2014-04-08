@@ -106,8 +106,9 @@ int GetCommonPentagonVertex();
 int SameSide();
 #endif
 
-double breakmp[7][2][3]; /* 7 because only 7 layers in one strat */
-int    breakline[7][3];  /* 7 because only 7 layers in one strat */
+double breakmp[100][2][3]; /* 7 because only 7 layers in one strat but now 100 possible! mwj*/
+int    breakline[100][3];  /* 7 because only 7 layers in one strat but now 100 possible! mwj*/
+int whichRock(double xLoc, double yLoc, double zLoc, int *rockType,int *index);
  
 /*
 ** calculate strat surfaces if only 3 corners of tet are part of same
@@ -131,7 +132,7 @@ TETINFO *t;
    OBJECT *event;
    int numEvents = countObjects(NULL_WIN);
    LAYER_PROPERTIES *properties;    
-
+   int rockCode;
       
    t->pC=0;
    t->exact=FALSE;
@@ -190,9 +191,11 @@ TETINFO *t;
                                      properties->color.green,
                                      properties->color.blue);
 
-         sprintf(clayer, "S%02dL%02d%04d", index, event->generalData-1,
-                                           SeqCode[t->GoodPts[0]]);
-                  
+        /* sprintf(clayer, "S%02dL%02d%04d", index, event->generalData-1,
+                                           SeqCode[t->GoodPts[0]]);*/
+         rockCode=getStratRock (index, event->generalData-1)-1;
+         sprintf(clayer,"S_%02d_%02d_%03d_%03d_%03d", index, event->generalData-1,SeqCode[t->GoodPts[0]],rockCode,rockCode-1);
+
          BetaFindMids(level, Values, Points, t, MidPoints, NMids, SeqCode);
                                                 /* draw strat surfaces */
          BetaCalcPlanes(level, Values, Points, t, MidPoints, NMids);
@@ -512,12 +515,74 @@ TETINFO *t;
 int SeqCode[8];
 #endif
 {
-   OBJECT *object;
-   
-   if (!(object = SetCLayer((unsigned char *) &(t->cypher[SeqCode[t->InCode]]),
+   OBJECT *object,*Inevent,*Exevent;
+   int Inindex,Exindex;
+   unsigned int pflavor=0;
+   int a,b,c;
+   int lutindex;
+   int break_code,InCode,ExCode;
+   LAYER_PROPERTIES *inLayer,*exLayer;
+   unsigned char *cypher;
+   unsigned int InrockType,ExrockType;
+   int ExeventIndex,IneventIndex;
+   int numEvents = countObjects(NULL_WIN);
+   int inRock,exRock;
+   int lDiff,eventCode,rock1,rock2;
+   STRATIGRAPHY_OPTIONS *InstratOptions,*ExstratOptions;
+   int sMax,sMin;
+
+   if (t->ExCode < t->InCode)
+   {
+      InCode=t->ExCode;
+      ExCode=t->InCode;
+   }
+   break_code = lastdiff((unsigned char *) &(t->cypher[SeqCode[t->InCode]]),
+           (unsigned char *) &(t->cypher[SeqCode[t->ExCode]]));
+
+
+   /*if (!(object = SetCLayer((unsigned char *) &(t->cypher[SeqCode[t->InCode]]),
                   (unsigned char *) &(t->cypher[SeqCode[t->ExCode]]),
                   SeqCode[t->InCode], SeqCode[t->ExCode])))
-      return (FALSE);
+      return (FALSE);*/
+
+   whichRock( Points[t->InCode][0], Points[t->InCode][1], Points[t->InCode][2], &inRock, &IneventIndex);
+   whichRock( Points[t->ExCode][0], Points[t->ExCode][1], Points[t->ExCode][2], &exRock, &ExeventIndex);
+   whatDiff(Points[t->InCode][0], Points[t->InCode][1], Points[t->InCode][2],
+   	    Points[t->ExCode][0], Points[t->ExCode][1], Points[t->ExCode][2],&lDiff,&eventCode,&rock1,&rock2);
+
+   taste(numEvents, (unsigned char *) &(t->cypher[SeqCode[t->InCode]]), &pflavor, &Inindex);
+   taste(numEvents, (unsigned char *) &(t->cypher[SeqCode[t->ExCode]]), &pflavor, &Exindex);
+
+   sMax=getStratMax (Inindex);
+   if(Inindex-1>=0)
+	   sMin=getStratMax (Inindex-1);
+   else
+	   sMin=0;
+   if (Inevent = (OBJECT *) nthObject (NULL_WIN, Inindex))
+	   if((Inevent->shape == STRATIGRAPHY) || (Inevent->shape == UNCONFORMITY))
+		   inRock=sMin+sMax-inRock+1;
+
+   sMax=getStratMax (Exindex);
+   if(Exindex-1>=0)
+	   sMin=getStratMax (Exindex-1);
+   else
+	   sMin=0;
+   if (Exevent = (OBJECT *) nthObject (NULL_WIN, Exindex))
+	   if((Exevent->shape == STRATIGRAPHY) || (Exevent->shape == UNCONFORMITY))
+		   exRock=sMin+sMax-exRock+1;
+
+
+   if(inRock < exRock)
+	   if(SeqCode[t->InCode]< SeqCode[t->ExCode])
+		   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->InCode], SeqCode[t->ExCode],inRock,exRock);
+	   else
+		   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->ExCode], SeqCode[t->InCode], inRock,exRock);
+   else
+	   if(SeqCode[t->InCode]< SeqCode[t->ExCode])
+		   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode,SeqCode[t->InCode], SeqCode[t->ExCode],exRock,inRock);
+	   else
+		   sprintf(clayer,"B_%03d_%03d_%03d_%03d_%03d_%03d",break_code,eventCode, SeqCode[t->ExCode],SeqCode[t->InCode],exRock,inRock);
+
 
    if (t->pC == 0)
       BetaBreakClean(Points, t, SeqCode, object);
@@ -758,8 +823,8 @@ TETINFO *t;
 #endif
 {
    int firstv,lastv,mm,nn,pp;
-   double tempbreakmp[7][2][3]; /* 7 because only 7 layers in one strat */
-   int    tempbreakline[7][2];  /* 7 because only 7 layers in one strat */
+   double tempbreakmp[100][2][3]; /* 7 because only 7 layers in one strat but now a 100 is possible! mwj*/
+   int    tempbreakline[100][2];  /* 7 because only 7 layers in one strat but now a 100 is possible! mwj*/
 
    if(t->pC==1)
    {

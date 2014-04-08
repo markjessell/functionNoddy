@@ -118,6 +118,9 @@ typedef enum {  BLOCK_MODEL,            DICER_BLOCK_MODEL,
 #define CALC_BLOCK_MODEL       ((int) 1)   /* 0000 0001 */
 #define CALC_MAGNETICS_IMAGE   ((int) 2)   /* 0000 0010 */
 #define CALC_GRAVITY_IMAGE     ((int) 4)   /* 0000 0100 */
+#define CALC_SURF_MODEL        ((int) 8)   /* 0000 1000 */
+#define CALC_BLOCK_GEOPHYS     ((int) 16)  /* 0001 0000 */
+#define CALC_ALL               ((int) 32)  /* 0010 0000 */
 typedef enum {  INPUT_MEM_HISTORY,      INPUT_FILE_HISTORY,
                 INPUT_FILE_BLOCK
 } DATA_INPUT;

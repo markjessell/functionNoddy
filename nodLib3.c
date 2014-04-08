@@ -226,6 +226,7 @@ int createLicenceInfoFile ();
 int getMachineUniqueLicence ();
 int initProject ();
 #endif
+int doTopology(char *output, char ***data);
 
 /* ======================================================================
 FUNCTION        getWindowStartPosition
@@ -929,9 +930,9 @@ DESCRIPTION
         copy into the array passed in the pointers to the properties
         structure that co-inside with the layer number in a block model
         NOTE this array is filled from 0 while the first block model layer
-             number is one, so use layerNum-1 as a reference into this arary
+             number is one, so use layerNum-1 as a reference into this array
         ie 0 - first layer of base Strat
-             - next the layers of any un conformities
+             - next the layers of any unconformities
              - next any dykes or plugs in the order they appear
 INPUT/OUTPUT
         LAYER_PROPERTIES *properties - array of at least "arraySize" elememts
@@ -3498,7 +3499,7 @@ OPERATIONS operation;
 ======================================================================
 FUNCTION        noddy
 DESCRIPTION
-   function vertion of Noddy, take an array
+   function version of Noddy, take an array
 INPUT   
 OUTPUT
 RETURNED
@@ -3519,8 +3520,8 @@ BLOCK_VIEW_OPTIONS *viewOptions;
 GEOPHYSICS_OPTIONS *geophOptions;
 #endif
 {
-   int calcBlock, calcMag, calcGrav;
-   char blockFile[100];
+   int calcBlock, calcMag, calcGrav,calcSurf;
+   char blockFile[100],dxfname[250];
 
    if ( !input || !output)
       return (FALSE);
@@ -3533,6 +3534,7 @@ GEOPHYSICS_OPTIONS *geophOptions;
    calcBlock =  operation && CALC_BLOCK_MODEL;
    calcMag =  operation && CALC_MAGNETICS_IMAGE;
    calcGrav =  operation && CALC_GRAVITY_IMAGE;
+   calcSurf =  operation && CALC_SURF_MODEL;
    
    switch (inputFrom)
    {
@@ -3553,19 +3555,167 @@ GEOPHYSICS_OPTIONS *geophOptions;
    if (!viewOptions)
       viewOptions = getViewOptions ();
 
-   if (calcMag || calcGrav)
-   {
-      if (calcBlock)//mwj_hack
+   if (operation == 1)
+         doGeophysics (BLOCK_ONLY, viewOptions, geophOptions, output, output, NULL, 0, NULL, NULL, NULL); //mwj_hack
+   if (operation == 16)
          doGeophysics (BLOCK_AND_ANOM, viewOptions, geophOptions, output, output, NULL, 0, NULL, NULL, NULL); //mwj_hack
-      else
+   if (operation == 2)
          doGeophysics (ANOM, viewOptions, geophOptions, output, NULL, NULL, 0, NULL, NULL, NULL);
+   if(operation == 8)
+   {
+	   sprintf((char *) dxfname,"%s.dxf",output);
+	   do3dStratMap ((THREED_IMAGE_DATA *) NULL, dxfname);
    }
-   else
-      doGeophysics (BLOCK_ONLY, viewOptions, geophOptions, output, output, NULL, 0, NULL, NULL, NULL);
-
+   if(operation == 32)
+   {
+	   sprintf((char *) dxfname,"%s.dxf",output);
+	   doGeophysics (BLOCK_AND_ANOM, viewOptions, geophOptions, output, output, NULL, 0, NULL, NULL, NULL);
+	   do3dStratMap ((THREED_IMAGE_DATA *) NULL, dxfname);
+   }
    //memManagerFreeAll ();
    
    return (TRUE);
+}
+
+
+int doTopology(char *output, char ***data)
+{
+   register double ***dots, ***dots3D;
+   register STORY ***histoire;
+   register int x, y, z;
+   int xMax, yMax, zMax;
+   int numEvents = (int) countObjects(NULL_WIN);
+   double height;
+   double blockSize;
+   double xLoc, yLoc, zLoc;
+   int dx,dy,dz;
+   FILE *foutx,*fouty,*foutz;
+   char fnamex[250],fnamey[250],fnamez[250],fnamei[250];
+   unsigned char h1[ARRAY_LENGTH_OF_STRAT_CODE],h2[ARRAY_LENGTH_OF_STRAT_CODE];
+   int index1,index2;
+   unsigned int flavor1,flavor2;
+   STRATIGRAPHY_OPTIONS *stratOptions;
+   int strat_code1, layer_code1, strat_code2, layer_code2, dum_flav, dum_index;
+   double xdum,ydum;
+   
+   BLOCK_VIEW_OPTIONS *viewOptions = getViewOptions ();
+
+   xLoc = viewOptions->originX;
+   yLoc = viewOptions->originY;
+   zLoc = viewOptions->originZ - viewOptions->lengthZ;
+   
+   blockSize = viewOptions->geophysicsCubeSize;
+
+   xMax = (int) (viewOptions->lengthX / blockSize) + 1;
+   yMax = (int) (viewOptions->lengthY / blockSize) + 1;
+   zMax = (int) (viewOptions->lengthZ / blockSize) + 1;
+   
+   initLongJob (0, zMax + zMax*yMax*(numEvents-1) + xMax*yMax,
+                "Calculating 3D Stratigraphy", NULL);
+
+   if ((dots = (double ***) qdtrimat(0,yMax,0,xMax,0,3))==0L)
+   {
+      if (batchExecution)
+         fprintf (stderr, "Not enough memory, try closing some windows");
+      else
+         xvt_dm_post_error("Not enough memory, try closing some windows");
+      return (0);
+   }
+   if ((histoire = (STORY ***) qdtristrsmat(0,zMax,0,yMax,0,xMax))==0L)
+   {
+      if (batchExecution)
+         fprintf (stderr, "Not enough memory, try closing some windows");
+      else
+         xvt_dm_post_error("Not enough memory, try closing some windows");
+      freeqdtrimat(dots,0,zMax,0,yMax,0,xMax);
+      return (0);
+   }
+   if ((dots3D = (double ***) qdtrimat(0,zMax,0,yMax,0,xMax))==0L)
+   {
+      if (batchExecution)
+         fprintf (stderr, "Error, Not enough Memory");
+      else
+         xvt_dm_post_error("Error, Not enough Memory");
+      freeqdtrimat(dots,0,zMax,0,yMax,0,xMax);
+      free_qdtristrsmat(histoire,0,zMax,0,yMax,0,xMax);
+      return (0);
+   }
+
+   for (z = 0, height = zLoc; z < zMax; z++, height += blockSize)
+   {
+      incrementLongJob (INCREMENT_JOB);
+      for (y = 0; y < yMax; y++)
+      {
+         for (x = 0; x < xMax; x++)
+         {
+            dots[y+1][x+1][1] = x*blockSize + xLoc+0.000001; /* mwj_fix */
+            dots[y+1][x+1][2] = (yMax-1-y)*blockSize + yLoc+0.000001; /* mwj_fix */
+            dots[y+1][x+1][3] = height+0.000001; /* mwj_fix */
+
+            histoire[z+1][y+1][x+1].again=1;
+            izero(histoire[z+1][y+1][x+1].sequence);
+         }
+      }
+      reverseEvents (dots, histoire[z+1], yMax, xMax);
+
+      for (y = 0; y < yMax; y++)
+      {
+         for (x = 0; x < xMax; x++)
+         {
+            dots3D[z+1][y+1][x+1] = dots[y+1][x+1][3]; /* Z location */
+         }
+      }
+   }
+	 sprintf((char *)fnamex,"%s._x",(char *) output);
+	 foutx=fopen(fnamex,"w");
+	 sprintf((char *)fnamey,"%s._y",(char *) output);
+	 fouty=fopen(fnamey,"w");
+	 sprintf((char *)fnamez,"%s._z",(char *) output);
+	 foutz=fopen(fnamez,"w");
+	 
+   for (z = zMax-1; z > 0; z--)
+   {
+      incrementLongJob (INCREMENT_JOB);
+      for (x = 1; x < xMax; x++)
+      {
+      		for (y = 1; y < yMax; y++)
+      		{
+         	  
+         	  iequal((unsigned char *) &h1[0],(unsigned char *) &(histoire[z][y][x].sequence[0]));
+         	  iequal((unsigned char *) &h2[0],(unsigned char *) &(histoire[z][y][x+1].sequence[0]));										
+						dx=(int) lastdiff((unsigned char *) &h1[0],(unsigned char *) &h2[0]);
+           	  fprintf(foutx,"%d\t",dx);
+         	  
+          	iequal((unsigned char *) &h1[0],(unsigned char *) &(histoire[z][y][x].sequence[0]));
+         	  iequal((unsigned char *) &h2[0],(unsigned char *) &(histoire[z][y+1][x].sequence[0]));
+						dy=(int) lastdiff((unsigned char *) &h1[0],(unsigned char *) &h2[0]);
+
+						if (dy==0 && flavor1 !=flavor2)
+							dy=-1;
+          	fprintf(fouty,"%d\t",dy);
+        	  
+         	  iequal((unsigned char *) &h1[0],(unsigned char *) &(histoire[z][y][x].sequence[0]));
+         	  iequal((unsigned char *) &h2[0],(unsigned char *) &(histoire[z+1][y][x].sequence[0]));
+
+						dz=(int) lastdiff((unsigned char *) &h1[0],(unsigned char *) &h2[0]);
+						if (dz==0 && flavor1 != flavor2)
+							dy=-1;
+          	fprintf(foutz,"%d\t",dz);
+        }
+        fprintf(foutx,"\n");
+        fprintf(fouty,"\n");
+        fprintf(foutz,"\n");
+      }
+   }
+   fclose(foutx);
+   fclose(fouty);
+   fclose(foutz);
+   
+   freeqdtrimat(dots,0,yMax,0,xMax,0,3);
+   free_qdtristrsmat(histoire,0,zMax,0,yMax,0,xMax);
+   freeqdtrimat(dots3D,0,zMax,0,yMax,0,xMax);
+
+
 }
 
 /*
