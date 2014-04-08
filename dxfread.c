@@ -24,7 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <malloc.h>
+#include "malloc.h"
 #include <math.h>
 #include <assert.h>
 #include "dxf.h"
@@ -171,17 +171,17 @@ int *resultFlags;
       {
          continue;
       }
-      else if( stricmp( group.d.text, "EOF" ) == 0 ) /* end of file */
+      else if( strcmp( group.d.text, "EOF" ) == 0 ) /* end of file */
       {
          break;
       }
-      else if( stricmp( group.d.text, "POLYLINE" ) == 0 ) /* a triangle */
+      else if( strcmp( group.d.text, "POLYLINE" ) == 0 ) /* a triangle */
       {
          triRead = readPoly( dxfFile, &triangle, layerRead );
          if( !triRead )                 /* signal a bad POLYLINE */
             (*resultFlags) |= fBADPOLY;
       }
-      else if( stricmp( group.d.text, "3DFACE" ) == 0 )  /* a triangle */
+      else if( strcmp( group.d.text, "3DFACE" ) == 0 )  /* a triangle */
       {
          triRead = readFace( dxfFile, &triangle, layerRead );
          if( !triRead )  
@@ -333,7 +333,7 @@ int *flags;
 
    for( lnum=0; lnum<(*numLayers); lnum++ ) /* find a matching layer */
    {
-      if( stricmp( layer[lnum].layerName, layerName ) == 0 )
+      if( strcmp( layer[lnum].layerName, layerName ) == 0 )
          break;
    }
    
@@ -537,9 +537,9 @@ char layerName[];
                                        = triangle->corner[2][2] = (ftype) 0.0;
 
    dxfReadGroup( dxfFile, &group );
-   while( (group.num != 0) || (stricmp( group.d.text, "SEQEND") != 0) )
+   while( (group.num != 0) || (strcmp( group.d.text, "SEQEND") != 0) )
    {
-      if( (group.num == 0) && (stricmp( group.d.text, "VERTEX" ) == 0) )
+      if( (group.num == 0) && (strcmp( group.d.text, "VERTEX" ) == 0) )
       {                                                    /* next corner */
          cornerNum++;
       }

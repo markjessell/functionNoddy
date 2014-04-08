@@ -9,7 +9,7 @@
 #include "3dDraw.h"
 #include "3dFMath.h"
 #if (XVTWS != MACWS)
-#include <malloc.h>
+#include "malloc.h"
 #endif
 
 #define DEBUG(X)    

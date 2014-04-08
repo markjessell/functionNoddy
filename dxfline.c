@@ -18,7 +18,7 @@
 #include <string.h>
 #if (XVTWS == MACWS)
 #else
-#include <malloc.h>
+#include "malloc.h"
 #endif
 #include <math.h>
 #include <assert.h>
@@ -112,15 +112,15 @@ int *resultFlags;
                 dxfReadGroup( dxfFile, &group );
                 if( group.num != 0 )                                                                                                    /* Looking for an entity */
                         continue;
-                else if( stricmp( group.d.text, "EOF" ) == 0 )
+                else if( strcmp( group.d.text, "EOF" ) == 0 )
                         break;
-                else if(         !stricmp( group.d.text, "POINT" )
-                                                || !stricmp( group.d.text, "VERTEX" ) )
+                else if(         !strcmp( group.d.text, "POINT" )
+                                                || !strcmp( group.d.text, "VERTEX" ) )
                 {
                         readVertex( dxfFile, point, layerName );
                         if( pointRead )                                                          /* Attempt to string points into a line */
                         {
-                                if( stricmp( prevLayer, layerName ) == 0 )
+                                if( strcmp( prevLayer, layerName ) == 0 )
                                         plistAppend( &(line.points), point );
                                 else
                                         layer = storeLine( numLayers, layer, prevLayer, line, resultFlags );
@@ -141,7 +141,7 @@ int *resultFlags;
                                 pointRead = 0;
                         }
 
-                        if( stricmp( group.d.text, "POLYLINE" ) == 0 )
+                        if( strcmp( group.d.text, "POLYLINE" ) == 0 )
                         {
                                 result = readPoly2D( dxfFile, &line, layerName );
                                 if( !result )
@@ -149,8 +149,8 @@ int *resultFlags;
                                 else
                                         layer = storeLine( numLayers, layer, layerName, line, resultFlags );
                         }
-                        else if(         !stricmp( group.d.text, "LINE" )
-                                                        || !stricmp( group.d.text, "3DLINE" ) )
+                        else if(         !strcmp( group.d.text, "LINE" )
+                                                        || !strcmp( group.d.text, "3DLINE" ) )
                         {
                                 readEntLine( dxfFile, &line, layerName );
                                 layer = storeLine( numLayers, layer, layerName, line, resultFlags );
@@ -209,7 +209,7 @@ int *flags;
 
         for( lnum=0; lnum<(*numLayers); lnum++ )                        /* find a matching layer */
         {
-                if( stricmp( layer[lnum].layerName, layerName ) == 0 )
+                if( strcmp( layer[lnum].layerName, layerName ) == 0 )
                         break;
         }
         if( lnum >= (*numLayers) )
@@ -285,12 +285,12 @@ char layerName[];
         line->points = NULL;                            /* Clear list of points */
 
         dxfReadGroup( dxfFile, &group);
-        while( (group.num != 0) || (stricmp( group.d.text, "SEQEND") != 0) )
+        while( (group.num != 0) || (strcmp( group.d.text, "SEQEND") != 0) )
         {
                 switch( group.num )
                 {
                         case 0:
-                                if( stricmp( group.d.text, "VERTEX" ) == 0 )
+                                if( strcmp( group.d.text, "VERTEX" ) == 0 )
                                 {
                                         readVertex( dxfFile, point, group.d.text );
                                         if( twoDim && ecsUsed )                                                 /* apply ECS transformation */

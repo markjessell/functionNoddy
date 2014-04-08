@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
+#include "malloc.h"
 
 #define FCN_NODDY_ONLY
 

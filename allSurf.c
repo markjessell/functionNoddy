@@ -47,7 +47,7 @@
 #include "allSurf.h"
 #include <math.h>
 #if (XVTWS != MACWS)
-#include <malloc.h>
+#include "malloc.h"
 #endif
 
 #define DEBUG(X)  
