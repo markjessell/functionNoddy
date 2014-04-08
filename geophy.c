@@ -79,14 +79,14 @@ float ****densityData,     ****magSusData,      ****remSusDecData,
       ****aniSusAxis2Data, ****aniSusAxis3Data;
 #endif
 {
-   if (indexCalc)
-   {
+   //if (indexCalc) //save index even if deformable rem or alteration mwj_fix
+   //{
       if (!(*indexData = (short ***) create3DIregArray (numLayers,
                                   layerDimensions, sizeof(short))))
          return (FALSE);
-   }
-   else
-   {
+   //}
+  // else
+   //{
       if (densityCalc)
       {
          if (!(*densityData = (float ***) create3DIregArray (numLayers,
@@ -139,7 +139,7 @@ float ****densityData,     ****magSusData,      ****remSusDecData,
                                   layerDimensions, sizeof(float))))
             return (FALSE);
       }
-   }
+   //}
    return (TRUE);
 }
  
@@ -455,17 +455,17 @@ float ***densityData,     ***magSusData,      ***remSusDecData,
              options->declination, densityCalc, susCalc, remCalc, aniCalc,
              indexCalc, numProps, layerProps);
              
-   if (indexCalc)
-   {
+  // if (indexCalc)//save index even if deformable rem or alteration mwj_fix
+   //{
       addFileExtention (blockName, ANOM_INDEX_FILE_EXT);
       write3DIregBlockToFile (blockName, (char ***) indexData,
                        numLayers, layerDimensions, sizeof(short));
       //doTopology(blockName,(char ***) indexData);
       //do3dStratMap ((THREED_IMAGE_DATA *) NULL, dxfname); //comment out for for ipython
 
-   }
-   else
-   {
+  // }
+   //else
+  // {
       if (densityCalc)
       {
          addFileExtention (blockName, ANOM_DENSITY_FILE_EXT);
@@ -518,7 +518,7 @@ float ***densityData,     ***magSusData,      ***remSusDecData,
          write3DIregBlockToFile (blockName, (char ***) aniSusAxis3Data,
                        numLayers, layerDimensions, sizeof(float));
       }
-   }
+   //}
 
    return (TRUE);
 }
