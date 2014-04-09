@@ -3572,6 +3572,12 @@ GEOPHYSICS_OPTIONS *geophOptions;
 	   doGeophysics (BLOCK_AND_ANOM, viewOptions, geophOptions, output, output, NULL, 0, NULL, NULL, NULL);
 	   do3dStratMap ((THREED_IMAGE_DATA *) NULL, dxfname);
    }
+   if(operation == 64)
+   {
+	   sprintf((char *) dxfname,"%s.dxf",output);
+	   doGeophysics (BLOCK_ONLY, viewOptions, geophOptions, output, output, NULL, 0, NULL, NULL, NULL);
+	   do3dStratMap ((THREED_IMAGE_DATA *) NULL, dxfname);
+   }
    //memManagerFreeAll ();
    
    return (TRUE);

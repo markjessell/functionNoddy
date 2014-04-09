@@ -6,10 +6,11 @@ noddy input_history output_prefix calc_mode
 
 calc_mode = one of 
 
-BLOCK_MODEL       
+BLOCK       
 GEOPHYSICS   
 SURFACES
 BLOCK_GEOPHYS
+BLOCK_SURFACES
 ALL 
 
 If SURFACES is slected, the resulting DXF file has each surface (and triangle) coded according to the following information-

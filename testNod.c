@@ -20,7 +20,7 @@ int main (int argc, char *argv[])
 
    if (argc < 4)
    {
-      printf ("Arguments <historyfile> <outputfile> <calc_mode>:\nBLOCK\nGEOPHYSICS\nSURFACES\nBLOCK_GEOPHYS\nALL\n");
+      printf ("Arguments <historyfile> <outputfile> <calc_mode>:\nBLOCK\nGEOPHYSICS\nSURFACES\nBLOCK_GEOPHYS\nBLOCK_SURFACES\nALL\n");
       return (-1);
    }
 
@@ -34,6 +34,8 @@ int main (int argc, char *argv[])
 	   mode=16;
    else if(!strcmp(argv[3],"ALL"))
 	   mode=32;
+   else if(!strcmp(argv[3],"BLOCK_SURFACES"))
+	   mode=64;
    else
    {
 	   printf("Calculation mode %s not recognised\n", argv[3]);
