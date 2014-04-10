@@ -2,6 +2,8 @@ This is the batch (and function) version of Noddy that simply takes a history fi
 
 For the compiled Windows version, complete with documentation, go to http://tinyurl.com/noddy-site
 
+For a beta version of an IPython Notebook providing access to the this version of Noddy, go to https://github.com/flohorovicic/pynoddy
+
 Usage:
 
 noddy input_history output_prefix calc_mode
