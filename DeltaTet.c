@@ -315,13 +315,13 @@ double Points[8][3];
    STRATIGRAPHY_OPTIONS *InstratOptions,*ExstratOptions;
    int sMax,sMin;
 
-   if (!(object = SetCLayer((unsigned char *) &(t->cypher[SeqCode[t->InCode]]),
+   /*if (!(object = SetCLayer((unsigned char *) &(t->cypher[SeqCode[t->InCode]]),
                   (unsigned char *) &(t->cypher[SeqCode[t->ExCode]]),
                    SeqCode[t->InCode], SeqCode[t->ExCode])))
    {
 
 	   return (FALSE);
-   }
+   }*/
 
    taste(numEvents, t->cypher[SeqCode[t->InCode]], &InrockType, &IneventIndex);
    taste(numEvents, t->cypher[SeqCode[t->ExCode]], &ExrockType, &ExeventIndex);
