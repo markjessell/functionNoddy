@@ -3021,7 +3021,7 @@ void *var;
    readGoodLine(in, oneline);
    while ((oneline[i] != '=') && (oneline[i] != '\0'))
       i++;
-   if (oneline[i] != '\n')
+   if (oneline[i] != '\n' && oneline[i] != '\0')
    {
       if (strcmp (fmt, "%s") == 0)  /* copy multiple words with %s */
       {
@@ -3531,10 +3531,10 @@ GEOPHYSICS_OPTIONS *geophOptions;
    batchExecution = TRUE;
    
                          /* Find out what we are to calculate */
-   calcBlock =  operation && CALC_BLOCK_MODEL;
-   calcMag =  operation && CALC_MAGNETICS_IMAGE;
-   calcGrav =  operation && CALC_GRAVITY_IMAGE;
-   calcSurf =  operation && CALC_SURF_MODEL;
+   calcBlock =  operation & CALC_BLOCK_MODEL;
+   calcMag =  operation & CALC_MAGNETICS_IMAGE;
+   calcGrav =  operation & CALC_GRAVITY_IMAGE;
+   calcSurf =  operation & CALC_SURF_MODEL;
    
    switch (inputFrom)
    {

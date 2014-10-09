@@ -17,12 +17,16 @@ int main (int argc, char *argv[])
    int mode=0;
    double x,y,z,x2,y2,z2;
    int rockType,index;
+   int restauration = 0;/* GL: restauration mode, outputs original position*/
+
+	char exportname[250];
 
    if (argc < 4)
    {
-      printf ("Arguments <historyfile> <outputfile> <calc_mode>:\nBLOCK\nGEOPHYSICS\nSURFACES\nBLOCK_GEOPHYS\nALL\n");
+      printf ("Arguments <historyfile> <outputfile> <calc_mode>:\nBLOCK\nGEOPHYSICS\nSURFACES\nBLOCK_GEOPHYS\nALL\nRESTORATION\n");
       return (-1);
    }
+
 
    if(!strcmp(argv[3],"BLOCK"))
 	   mode=1;
@@ -34,6 +38,12 @@ int main (int argc, char *argv[])
 	   mode=16;
    else if(!strcmp(argv[3],"ALL"))
 	   mode=32;
+   /*GL:file for exporting initial locations*/
+   else if(!strcmp(argv[3],"RESTORATION")){
+	    mode=1;
+		restauration=1;
+		sprintf((char *) exportname,"%s.csv",argv[2]);
+   }
    else
    {
 	   printf("Calculation mode %s not recognised\n", argv[3]);
@@ -47,21 +57,52 @@ int main (int argc, char *argv[])
               (BLOCK_VIEW_OPTIONS *) NULL, (GEOPHYSICS_OPTIONS *) NULL))
    {
       printf ("\nNoddy Failed.\nSorry.\n");
+	return (FALSE);
    }
-  /*
-   * example code for exporting pre-deformation locations of a volume of points
-   * for(z=5000;z>=2000;z-=250)
-	   for(y=0;y<=7000;y+=250)
-		   for(x=0;x<=10000;x+=250)
-		   {
-			   x2=x;
-			   y2=y;
-			   z2=z;
-			   whereRock(&x2, &y2, &z2,&rockType,&index);
-			   printf("%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%d\t%d\t%d\t%d\n",x,y,z,x2, y2, z2,rockType,index);
-		   }
-      */
 
+   /*GL: exporting initial locations */
+   if(restauration){
+	FILE * pFile=NULL;
+
+	/* dimension of the grid*/
+	BLOCK_VIEW_OPTIONS *viewOptions = NULL;
+
+	/* opening the file*/
+	pFile = fopen(exportname,"w");
+	if( pFile == NULL ){
+		printf("Error while opening the output file: %s\n",exportname);
+		return (FALSE);
+	}
+	printf("\nWriting to file: %s\n",exportname);
+
+	viewOptions = getViewOptions();
+	if( viewOptions == NULL ){
+		printf("Error while getting the dimensions.\n");
+		return (FALSE);
+	}
+	printf("Writing grid dimensions...\n");
+	printf("%lf\t%lf\t%lf\n",viewOptions->originX,viewOptions->originY,(viewOptions->originZ - viewOptions->lengthZ));
+	printf("%lf\t%lf\t%lf\n",viewOptions->lengthX,viewOptions->lengthY,viewOptions->lengthZ);
+	printf("%lf\t%lf\t%lf\n",viewOptions->geologyCubeSize,viewOptions->geologyCubeSize,viewOptions->geologyCubeSize);
+	fprintf(pFile,"%lf\t%lf\t%lf\n",viewOptions->originX,viewOptions->originY,(viewOptions->originZ - viewOptions->lengthZ));
+	fprintf(pFile,"%lf\t%lf\t%lf\n",viewOptions->lengthX,viewOptions->lengthY,viewOptions->lengthZ);
+	fprintf(pFile,"%lf\t%lf\t%lf\n",viewOptions->geologyCubeSize,viewOptions->geologyCubeSize,viewOptions->geologyCubeSize);
+	printf("Writing grid dimensions... Done.\n");
+
+	printf("Writing original coordinates...\n");
+	for(z = viewOptions->originZ + viewOptions->lengthZ; z>= viewOptions->originZ; z-= viewOptions->geologyCubeSize ){
+	    for(y=viewOptions->originY; y<= viewOptions->originY + viewOptions->lengthY; y+= viewOptions->geologyCubeSize ){
+		    for(x=viewOptions->originX; x<= viewOptions->originX + viewOptions->lengthX; x+= viewOptions->geologyCubeSize ){
+			   x2=x;y2=y;z2=z;
+			   whereRock(&x2, &y2, &z2,&rockType,&index);
+			   fprintf(pFile,"%d\t%d\t%lf\t%lf\t%lf\n",index,rockType,x2,y2,z2);
+		    }
+	    }      
+    }
+	printf("Writing original coordinates... Done.\n");
+	
+	fclose(pFile);
+    }
 
    return (TRUE);
 }

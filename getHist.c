@@ -21,7 +21,7 @@
 #include "noddy.h"
 #include "titles.h"
 
-#define DEBUG(X)    
+#define DEBUG(X) X
 
 #define VERSION_TOLERANCE 0.01
                  /* ********************************** */
