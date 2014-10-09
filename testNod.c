@@ -23,7 +23,7 @@ int main (int argc, char *argv[])
 
    if (argc < 4)
    {
-      printf ("Arguments <historyfile> <outputfile> <calc_mode>:\nBLOCK\nGEOPHYSICS\nSURFACES\nBLOCK_GEOPHYS\nALL\nRESTORATION\n");
+      printf ("Arguments <historyfile> <outputfile> <calc_mode>:\nBLOCK\nGEOPHYSICS\nSURFACES\nBLOCK_GEOPHYS\nBLOCK_SURFACES\nRESTORATION\nALL\n");
       return (-1);
    }
 
@@ -38,13 +38,13 @@ int main (int argc, char *argv[])
 	   mode=16;
    else if(!strcmp(argv[3],"ALL"))
 	   mode=32;
-   /*GL:file for exporting initial locations*/
+   else if(!strcmp(argv[3],"BLOCK_SURFACES"))
+	   mode=64;   /*GL:file for exporting initial locations*/
    else if(!strcmp(argv[3],"RESTORATION")){
 	    mode=1;
 		restauration=1;
 		sprintf((char *) exportname,"%s.csv",argv[2]);
-   }
-   else
+   }   else
    {
 	   printf("Calculation mode %s not recognised\n", argv[3]);
 	   return(-1);

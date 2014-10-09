@@ -1,29 +1,23 @@
 This is the batch (and function) version of Noddy that simply takes a history file and calculates a block model, triangulated volume and gravity and magnetic data from this file.
 
+For the compiled Windows version, complete with documentation, go to http://tinyurl.com/noddy-site
+
+For a beta version of an IPython Notebook providing access to the this version of Noddy, go to https://github.com/flohorovicic/pynoddy
+
 Usage:
 
-noddy input_history  output_prefix calc_mode
+noddy input_history output_prefix calc_mode
 
 calc_mode = one of 
 
-BLOCK_MODEL       
+BLOCK       
 GEOPHYSICS   
 SURFACES
 BLOCK_GEOPHYS
+BLOCK_SURFACES
 ALL 
 
-
-It will generate a *.g00 file (block model header); a *.g12 file (block model itself) and a *.dxf file (triangulated surfaces)
-
-WARNING: This version will crash if the history file is not set to create either of the two types of DXF triangulations (DXF 3D faces or DXF polylines) rather than Lines, Shading, or Vulcan file. In the history file this should read 
-
-#3DOptions
-.
-.
-.
-	Fill Type	= 3
-	
-The resulting DXF file has each surface (and triangle) coded according to the following information-
+If SURFACES, BLOCK_SURFACES, or ALL is selected, the resulting DXF file has each surface (and triangle) coded according to the following information-
 For discontinuities (coded as faults=1,  unconformities=2, dykes=4, plugs=8, stratigraphic=16): age of discontinuity, code of discontinuity ,contiguous volume code #1, contiguous volume code #2,rock #1 adjacent to triangle,rock #2 adjacent to triangle 
 For stratigraphic surfaces: stratigraphic series code, unit in series, lithological code, rock #1 adjacent to triangle,rock #2 adjacent to triangle 
 
